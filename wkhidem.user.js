@@ -2,23 +2,22 @@
 // @name WaniKani hide mnemonics
 // @namespace wkhidem
 // @description Adds a possiblity to hide meaning and reading mnemonics during lessons and review.
-// @include http://www.wanikani.com/review/session*
-// @include http://www.wanikani.com/lesson/session*
 // @version 1.0
 // @author Niklas Barsk
+// @include http://www.wanikani.com/review/session*
+// @include http://www.wanikani.com/lesson/session*
+// @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
+// @require  https://gist.github.com/raw/2625891/waitForKeyElements.js
+// @grant    GM_addStyle
 // @run-at document-end
-// @updateURL
-// @downloadURL
+// @updateURL http://userscripts.org/scripts/source/184925.user.js
 // ==/UserScript==
 
 /*
- * This script is licensed unter the MIT licence.
+ * This script is licensed under the MIT licence.
  */
 
-/**
- * The character the current review/lesson page is for.
- */
-var character = document.getElementById("character").textContent.trim();
+waitForKeyElements ("#item-info-meaning-mnemonic", init);
 
 function init()
 {
@@ -44,6 +43,7 @@ function setCorrectText()
  */
 function hideIfNeeded()
 {
+    var character = document.getElementById("character").textContent.trim();
     if (localStorage.getItem(character + "_meaning") != null)
     {
         // Meaning currently hidden
@@ -63,6 +63,7 @@ function hideIfNeeded()
  */
 function hide(which)
 {
+    var character = document.getElementById("character").textContent.trim();
     localStorage.setItem(character + "_" + which, 0);
     var element = document.getElementById("item-info-" + which + "-mnemonic");
     element.style.display="none"
@@ -75,6 +76,7 @@ function hide(which)
  */
 function show(which)
 {
+    var character = document.getElementById("character").textContent.trim();
     localStorage.removeItem(character + "_" + which);
     var element = document.getElementById("item-info-" + which + "-mnemonic");
     element.style.display=""
@@ -110,6 +112,7 @@ function textForHeader(which, action, headerID)
  */
 function setCorrectTextFor(which)
 {
+    var character = document.getElementById("character").textContent.trim();
     if (localStorage.getItem(character + "_" + which) != null)
     {
         // Header currently hidden
