@@ -134,21 +134,39 @@ function setCorrectTextFor(which)
 
 
 // meaning variables.
-var meaning_cont = document.getElementById("supplement-voc-meaning");
-var meaning_div = meaning_cont.getElementsByClassName("pure-u-3-4")[0];
-var meaning_header = meaning_div.children[0]; //should have link and be hidden when clicked.
-var meaning_explanation = meaning_div.children[1]; // should be hidden when link is clicked.
-var meaning_notes = meaning_div.children[2]; // should get link when the other is hidden.
+var meaning_cont
+var meaning_div
+var meaning_header
+var meaning_explanation
+var meaning_notes
 
 // reading variables.
-var reading_cont = document.getElementById("supplement-voc-reading");
-var reading_div = reading_cont.getElementsByClassName("pure-u-3-4")[0];
-var reading_header = reading_div.children[0]; //should have link and be hidden when clicked.
-var reading_explanation = reading_div.children[1]; // should be hidden when link is clicked.
-var reading_notes = reading_div.children[2]; // should get link when the other is hidden.
-    
+var reading_cont
+var reading_div
+var reading_header
+var reading_explanation
+var reading_notes
+ 
+function setupVars()
+{
+    // meaning variables.
+    meaning_cont = document.getElementById("supplement-voc-meaning");
+    meaning_div = meaning_cont.getElementsByClassName("pure-u-3-4")[0];
+    meaning_header = meaning_div.children[0]; //should have link and be hidden when clicked.
+    meaning_explanation = meaning_div.children[1]; // should be hidden when link is clicked.
+    meaning_notes = meaning_div.children[2]; // should get link when the other is hidden.
+
+    // reading variables.
+    reading_cont = document.getElementById("supplement-voc-reading");
+    reading_div = reading_cont.getElementsByClassName("pure-u-3-4")[0];
+    reading_header = reading_div.children[0]; //should have link and be hidden when clicked.
+    reading_explanation = reading_div.children[1]; // should be hidden when link is clicked.
+    reading_notes = reading_div.children[2]; // should get link when the other is hidden.
+}
+ 
 function initLearning()
 {
+    setupVars();
     learningSetCorrectText();
     learningHideIfNeeded();
 }
