@@ -18,7 +18,7 @@
  */
 
 waitForKeyElements("#item-info-meaning-mnemonic", init);
-waitForKeyElement("#supplement-voc-meaning", initLearning);
+waitForKeyElements("#supplement-voc-meaning", initLearning);
 
 function init()
 {
