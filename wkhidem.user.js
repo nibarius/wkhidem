@@ -2,7 +2,7 @@
 // @name WaniKani hide mnemonics
 // @namespace wkhidem
 // @description Adds a possiblity to hide meaning and reading mnemonics during lessons and review.
-// @version 1.0
+// @version 1.1
 // @author Niklas Barsk
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
@@ -39,20 +39,58 @@ function setCorrectText()
 }
 
 /**
+ * Returns true if the mnemonic is hidden for the current character
+ * and the given type.
+ */
+function isHidden(which)
+{
+    return localStorage.getItem(getStorageKey(which)) != null
+}
+
+/**
+ * Set hidden status for the current character in the localStorage
+ * for the give type.
+ * @param "reading" or "meaning" depending on which key is desired.
+ */
+function setStorage(which)
+{
+    localStorage.setItem(getStorageKey(which), 0);
+}
+
+/**
+ * Remove the stored information about the current character from
+ * the localStorage for the give type.
+ * @param "reading" or "meaning" depending on which key is desired.
+ */
+function clearStorage(which)
+{
+    localStorage.removeItem(getStorageKey(which));
+}
+
+/**
+ * Get the key that the removed state for the current character is
+ * stored under in the localStorage.
+ * @param "reading" or "meaning" depending on which key is desired.
+ */
+function getStorageKey(which)
+{
+    var character = document.getElementById("character").textContent.trim();
+    var type = document.getElementById("character").className;
+    return type + "_" + character + "_" + which;
+}
+
+/**
  * Hide the reading and meaning sections if needed.
  */
 function hideIfNeeded()
 {
-    var character = document.getElementById("character").textContent.trim();
-    if (localStorage.getItem(character + "_meaning") != null)
+    if (isHidden("meaning"))
     {
-        // Meaning currently hidden
         hide("meaning");
     }
 
-    if (localStorage.getItem(character + "_reading") != null)
+    if (isHidden("reading"))
     {
-        // Reading currently hidden
         hide("reading");
     }
 }
@@ -63,8 +101,7 @@ function hideIfNeeded()
  */
 function hide(which)
 {
-    var character = document.getElementById("character").textContent.trim();
-    localStorage.setItem(character + "_" + which, 0);
+    setStorage(which);
     var element = document.getElementById("item-info-" + which + "-mnemonic");
     element.style.display="none"
     setCorrectText();
@@ -76,8 +113,7 @@ function hide(which)
  */
 function show(which)
 {
-    var character = document.getElementById("character").textContent.trim();
-    localStorage.removeItem(character + "_" + which);
+    clearStorage(which);
     var element = document.getElementById("item-info-" + which + "-mnemonic");
     element.style.display=""
     setCorrectText();
@@ -112,15 +148,14 @@ function textForHeader(which, action, headerID)
  */
 function setCorrectTextFor(which)
 {
-    var character = document.getElementById("character").textContent.trim();
-    if (localStorage.getItem(character + "_" + which) != null)
+    if (isHidden(which))
     {
-        // Header currently hidden
+        // Display the "show" link in the note.
          textForHeader(which, "show", "note-" + which);
     }
     else
     {
-        // Meaning/Reading is currently shown
+        // Display the "hide" link in the header.
         textForHeader(which, "hide", "item-info-" + which + "-mnemonic");
 
         // Make sure the default version of the Note header is displayed.
