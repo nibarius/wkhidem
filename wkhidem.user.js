@@ -18,7 +18,9 @@
  */
 
 waitForKeyElements("#item-info-meaning-mnemonic", init);
-waitForKeyElements("#supplement-voc-meaning", initLearning);
+waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-meaning");});
+waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-meaning");});
+waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-meaning");});
 
 function init()
 {
@@ -147,26 +149,26 @@ var reading_header
 var reading_explanation
 var reading_notes
  
-function setupVars()
+function setupVars(which)
 {
     // meaning variables.
-    meaning_cont = document.getElementById("supplement-voc-meaning");
+    meaning_cont = document.getElementById(which);
     meaning_div = meaning_cont.getElementsByClassName("pure-u-3-4")[0];
     meaning_header = meaning_div.children[0]; //should have link and be hidden when clicked.
     meaning_explanation = meaning_div.children[1]; // should be hidden when link is clicked.
     meaning_notes = meaning_div.children[2]; // should get link when the other is hidden.
 
     // reading variables.
-    reading_cont = document.getElementById("supplement-voc-reading");
+    reading_cont = document.getElementById(which);
     reading_div = reading_cont.getElementsByClassName("pure-u-3-4")[0];
     reading_header = reading_div.children[0]; //should have link and be hidden when clicked.
     reading_explanation = reading_div.children[1]; // should be hidden when link is clicked.
     reading_notes = reading_div.children[2]; // should get link when the other is hidden.
 }
  
-function initLearning()
+function initLearning(which)
 {
-    setupVars();
+    setupVars(which);
     learningSetCorrectText();
     learningHideIfNeeded();
 }
