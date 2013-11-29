@@ -20,7 +20,7 @@
 waitForKeyElements("#item-info-meaning-mnemonic", init);
 waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-");});
 waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-");});
-waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-");});
+waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-name");});
 
 function init()
 {
@@ -138,8 +138,14 @@ var idPrefix;
 
 function getHeaders(which)
 {
+    var className = "pure-u-3-4";
+    if (idPrefix == "supplement-rad-name")
+    {
+        className = "pure-u-1"
+    }
+
     var id = idPrefix + which;
-    var parent = document.getElementById(id).getElementsByClassName("pure-u-3-4")[0];
+    var parent = document.getElementById(id).getElementsByClassName(className)[0];
     
     return {
         header: parent.children[0],
