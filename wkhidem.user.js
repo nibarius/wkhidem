@@ -134,41 +134,23 @@ function setCorrectTextFor(which)
 
 ///////////// Learning ///////////////
 
+var idPrefix;
 
-// meaning variables.
-var meaning_cont
-var meaning_div
-var meaning_header
-var meaning_explanation
-var meaning_notes
-
-// reading variables.
-var reading_cont
-var reading_div
-var reading_header
-var reading_explanation
-var reading_notes
-
-function setupVars(which)
+function getHeaders(which)
 {
-    // meaning variables.
-    meaning_cont = document.getElementById(which + "meaning");
-    meaning_div = meaning_cont.getElementsByClassName("pure-u-3-4")[0];
-    meaning_header = meaning_div.children[0]; //should have link and be hidden when clicked.
-    meaning_explanation = meaning_div.children[1]; // should be hidden when link is clicked.
-    meaning_notes = meaning_div.children[2]; // should get link when the other is hidden.
-
-    // reading variables.
-    reading_cont = document.getElementById(which + "reading");
-    reading_div = reading_cont.getElementsByClassName("pure-u-3-4")[0];
-    reading_header = reading_div.children[0]; //should have link and be hidden when clicked.
-    reading_explanation = reading_div.children[1]; // should be hidden when link is clicked.
-    reading_notes = reading_div.children[2]; // should get link when the other is hidden.
+    var id = idPrefix + which;
+    var parent = document.getElementById(id).getElementsByClassName("pure-u-3-4")[0];
+    
+    return {
+        header: parent.children[0],
+        explanation: parent.children[1],
+        notes: parent.children[2]
+        };
 }
 
-function initLearning(which)
+function initLearning(prefix)
 {
-    setupVars(which);
+    idPrefix = prefix;
     learningSetCorrectText();
     learningHideIfNeeded();
 }
@@ -185,15 +167,15 @@ function learningSetCorrectTextFor(which)
     if (localStorage.getItem(character + "_" + which) != null)
     {
         // Header currently hidden, the note header needs a show link
-         learningTextForHeader(which, "show", eval(which + "_notes"));
+         learningTextForHeader(which, "show", getHeaders(which).notes);
     }
     else
     {
         // Meaning/Reading is currently shown, the header needs a hide link
-        learningTextForHeader(which, "hide", eval(which + "_header"));
+        learningTextForHeader(which, "hide", getHeaders(which).header);
 
         // Make sure the default version of the Note header is displayed.
-        var nh = eval(which + "_notes");
+        var nh = getHeaders(which).notes;
         nh.innerHTML = nh.firstChild.textContent;
     }
 
@@ -219,9 +201,9 @@ function learning_show(which)
     var character = document.getElementById("character").textContent.trim();
     localStorage.removeItem(character + "_" + which);
 
-    var element = eval(which + "_header");
+    var element = getHeaders(which).header;
     element.style.display=""
-    element = eval(which + "_explanation");
+    element = getHeaders(which).explanation;
     element.style.display=""
 
     learningSetCorrectText();
@@ -233,9 +215,9 @@ function learning_hide(which)
     var character = document.getElementById("character").textContent.trim();
     localStorage.setItem(character + "_" + which, 0);
 
-    var element = eval(which + "_header");
+    var element = getHeaders(which).header;
     element.style.display="none"
-    element = eval(which + "_explanation");
+    element = getHeaders(which).explanation;
     element.style.display="none"
 
     learningSetCorrectText();
