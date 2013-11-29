@@ -21,6 +21,9 @@ waitForKeyElements("#item-info-meaning-mnemonic", init);
 waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-meaning");});
 waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-meaning");});
 waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-meaning");});
+waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-reading");});
+waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-reading");});
+waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-reading");});
 
 function init()
 {
@@ -215,7 +218,7 @@ function learningTextForHeader(which, action, header)
 
 function learning_show(which)
 {
-    console.log("show");
+    console.log("show " + which);
     var character = document.getElementById("character").textContent.trim();
     localStorage.removeItem(character + "_" + which);
     
@@ -229,7 +232,7 @@ function learning_show(which)
 
 function learning_hide(which)
 {
-    console.log("hide");
+    console.log("hide " + which);
     var character = document.getElementById("character").textContent.trim();
     localStorage.setItem(character + "_" + which, 0);
     
