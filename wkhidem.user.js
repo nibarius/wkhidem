@@ -18,12 +18,9 @@
  */
 
 waitForKeyElements("#item-info-meaning-mnemonic", init);
-waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-meaning");});
-waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-meaning");});
-waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-meaning");});
-waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-reading");});
-waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-reading");});
-waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-reading");});
+waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-");});
+waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-");});
+waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-");});
 
 function init()
 {
@@ -151,24 +148,24 @@ var reading_div
 var reading_header
 var reading_explanation
 var reading_notes
- 
+
 function setupVars(which)
 {
     // meaning variables.
-    meaning_cont = document.getElementById(which);
+    meaning_cont = document.getElementById(which + "meaning");
     meaning_div = meaning_cont.getElementsByClassName("pure-u-3-4")[0];
     meaning_header = meaning_div.children[0]; //should have link and be hidden when clicked.
     meaning_explanation = meaning_div.children[1]; // should be hidden when link is clicked.
     meaning_notes = meaning_div.children[2]; // should get link when the other is hidden.
 
     // reading variables.
-    reading_cont = document.getElementById(which);
+    reading_cont = document.getElementById(which + "reading");
     reading_div = reading_cont.getElementsByClassName("pure-u-3-4")[0];
     reading_header = reading_div.children[0]; //should have link and be hidden when clicked.
     reading_explanation = reading_div.children[1]; // should be hidden when link is clicked.
     reading_notes = reading_div.children[2]; // should get link when the other is hidden.
 }
- 
+
 function initLearning(which)
 {
     setupVars(which);
@@ -221,12 +218,12 @@ function learning_show(which)
     console.log("show " + which);
     var character = document.getElementById("character").textContent.trim();
     localStorage.removeItem(character + "_" + which);
-    
+
     var element = eval(which + "_header");
     element.style.display=""
     element = eval(which + "_explanation");
     element.style.display=""
-    
+
     learningSetCorrectText();
 }
 
@@ -235,12 +232,12 @@ function learning_hide(which)
     console.log("hide " + which);
     var character = document.getElementById("character").textContent.trim();
     localStorage.setItem(character + "_" + which, 0);
-    
+
     var element = eval(which + "_header");
     element.style.display="none"
     element = eval(which + "_explanation");
     element.style.display="none"
-    
+
     learningSetCorrectText();
 }
 
