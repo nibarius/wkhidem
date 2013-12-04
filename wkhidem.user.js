@@ -2,7 +2,7 @@
 // @name WaniKani hide mnemonics
 // @namespace wkhidem
 // @description Adds a possiblity to hide meaning and reading mnemonics during lessons and review.
-// @version 1.1
+// @version 1.2
 // @author Niklas Barsk
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
