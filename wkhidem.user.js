@@ -75,8 +75,32 @@ function clearStorage(which)
 function getStorageKey(which)
 {
     var character = document.getElementById("character").textContent.trim();
-    var type = document.getElementById("character").className;
+    var type;
+    if (isLesson())
+    {
+        type = document.getElementById("main-info").className.trim();
+    }
+    else if (isReview())
+    {
+        type = document.getElementById("character").className.trim();
+    }
     return type + "_" + character + "_" + which;
+}
+
+/**
+ * Returns true if the current page is a lesson.
+ */
+function isLesson()
+{
+    return document.URL.indexOf("lesson") != -1;
+}
+
+/**
+ * Returns true if the current page is a review.
+ */
+function isReview()
+{
+    return document.URL.indexOf("review") != -1;
 }
 
 /**
