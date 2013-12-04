@@ -21,6 +21,13 @@ waitForKeyElements ("#item-info-meaning-mnemonic", init);
 
 function init()
 {
+    if (!sanityCheckPassed())
+    {
+        // Don't try to run the script if the HTML can't be parsed.
+        console.warn("WaniKani hide mnemonics need to be updated to support the latest version of WaniKani.");
+        return;
+    }
+
     setCorrectText();
     hideIfNeeded();
 
@@ -185,5 +192,43 @@ function setCorrectTextFor(which)
         // Make sure the default version of the Note header is displayed.
         var nh = document.getElementById("note-" + which).childNodes[0];
         nh.innerHTML = nh.firstChild.textContent;
+    }
+}
+
+/**
+ * Return true if critical assumptions made about the HTML code holds.
+ */
+function sanityCheckPassed()
+{
+    try
+    {
+        ensureElementExists("all-info");
+        ensureElementExists("character");
+        ensureElementExists("item-info-reading-mnemonic");
+        ensureElementExists("item-info-meaning-mnemonic");
+        ensureElementExists("note-meaning");
+        ensureElementExists("note-reading");
+
+        if (isLesson())
+        {
+            ensureElementExists("main-info");
+        }
+    }
+    catch (e)
+    {
+        console.error(e.toString());
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Throws an exception if the given id doesn't exist in the DOM tree.
+ */
+function ensureElementExists(id)
+{
+    if (document.getElementById(id) == null)
+    {
+        throw new Error(id + " does not exist");
     }
 }
