@@ -42,7 +42,10 @@ function init()
 function setCorrectText()
 {
     setCorrectTextFor("meaning");
-    setCorrectTextFor("reading");
+    if (!isRadical())
+    {
+        setCorrectTextFor("reading");
+    }
 }
 
 /**
@@ -82,16 +85,39 @@ function clearStorage(which)
 function getStorageKey(which)
 {
     var character = document.getElementById("character").textContent.trim();
-    var type;
+    return getCharacterType() + "_" + character + "_" + which;
+}
+
+/**
+ * Return the type of the character the page is for: a string containing
+ * "vocabulary", "kanji" or "radical".
+ */
+function getCharacterType()
+{
     if (isLesson())
     {
-        type = document.getElementById("main-info").className.trim();
+        return document.getElementById("main-info").className.trim();
     }
     else if (isReview())
     {
-        type = document.getElementById("character").className.trim();
+        return document.getElementById("character").className.trim();
     }
-    return type + "_" + character + "_" + which;
+}
+
+/**
+ * Return true if the current page is for a radical.
+ */
+function isRadical()
+{
+    return getCharacterType() == "radical";
+}
+
+/**
+ * Return true if the current page is for vocabulary.
+ */
+function isVocabulary()
+{
+    return getCharacterType() == "vocabulary";
 }
 
 /**
@@ -120,7 +146,7 @@ function hideIfNeeded()
         hide("meaning");
     }
 
-    if (isHidden("reading"))
+    if (!isRadical() && isHidden("reading"))
     {
         hide("reading");
     }
@@ -133,8 +159,7 @@ function hideIfNeeded()
 function hide(which)
 {
     setStorage(which);
-    var element = document.getElementById("item-info-" + which + "-mnemonic");
-    element.style.display="none"
+    getMnemonicContainer(which).style.display="none"
     setCorrectText();
 }
 
@@ -145,8 +170,7 @@ function hide(which)
 function show(which)
 {
     clearStorage(which);
-    var element = document.getElementById("item-info-" + which + "-mnemonic");
-    element.style.display=""
+    getMnemonicContainer(which).style.display=""
     setCorrectText();
 }
 
@@ -157,20 +181,42 @@ function show(which)
  * @param which Specifies which header should be updated, the "reading" or "meaning" header.
  * @param action Specifies what happens when the header is pressed, either "show" or "hide".
  * @param headerID The ID of the header that should be updated.
+ * @param header The DOM element which should have its text updated.
  */
-function textForHeader(which, action, headerID)
+function textForHeader(which, action, header)
 {
-    var hide_meaning_HTML = "<span id=\"hide-meaning\"> (hide)</span>";
-    var show_meaning_HTML = "<span id=\"show-meaning\"> (show original meaning)</span>";
-    var hide_reading_HTML = "<span id=\"hide-reading\"> (hide)</span>";
-    var show_reading_HTML = "<span id=\"show-reading\"> (show original explanation)</span>";
-    var header = document.getElementById(headerID).childNodes[0];
-
     // Add the show/hide link to the header.
-    header.innerHTML = header.firstChild.textContent + eval(action + "_" + which + "_HTML");
+    header.innerHTML = header.firstChild.textContent + getLinkHTML(which, action);
 
-    // Set either hide(which) or show(which) as onclick handler.
+    // Set either hide(which) or show(which) as onclick handler for the new link.
     document.getElementById(action + "-" + which).onclick = function() { eval(action)(which);}
+}
+
+/**
+ * Get the HTML for the show/hide link.
+ * @param which Specifies if the link is for "reading" or "meaning".
+ * @param action Specifies if the link is "hide" or "show".
+ */
+function getLinkHTML(which, action)
+{
+    // Examples of what the html looks like:
+    // <span id="show-reading">(show original meaning)</span>
+    // <span id="hide-meaning">(hide)</span>
+
+    var linkText = action;
+    if (action == "show")
+    {
+        if (isVocabulary())
+        {
+            linkText += " original explanation";
+        }
+        else
+        {
+            linkText += " original mnemonic";
+        }
+    }
+
+    return "<span id=\"" + action + "-" + which + "\"> (" + linkText + ")</span>";
 }
 
 /**
@@ -182,17 +228,56 @@ function setCorrectTextFor(which)
     if (isHidden(which))
     {
         // Display the "show" link in the note.
-         textForHeader(which, "show", "note-" + which);
+        textForHeader(which, "show", getNoteHeader(which));
     }
     else
     {
         // Display the "hide" link in the header.
-        textForHeader(which, "hide", "item-info-" + which + "-mnemonic");
+        textForHeader(which, "hide", getMnemonicHeader(which));
 
         // Make sure the default version of the Note header is displayed.
-        var nh = document.getElementById("note-" + which).childNodes[0];
+        var nh = getNoteHeader(which);
         nh.innerHTML = nh.firstChild.textContent;
     }
+}
+
+/**
+ * Get the DOM element that contains the mnemonic.
+ * @param which Specifies if the header for the reading or meaning should
+ *              be returned. The parameter is ignored for radicals since
+ *              they only have one mnemonic.
+ */
+function getMnemonicContainer(which)
+{
+    if (isRadical())
+    {
+        return document.getElementById("item-info-col2").childNodes[0];
+    }
+    else
+    {
+        return document.getElementById("item-info-" + which + "-mnemonic");
+    }
+}
+
+/**
+ * Get the DOM element for the mnemonic header.
+ * @param which Specifies if the header for the reading or meaning should
+ *              be returned. The parameter is ignored for radicals since
+ *              they only have one mnemonic.
+ */
+function getMnemonicHeader(which)
+{
+    return getMnemonicContainer(which).childNodes[0];
+}
+
+/**
+ * Get the DOM element for the user notes header.
+ * @param which Specifies if the notes header for the reading or meaning
+ *              should be returned.
+ */
+function getNoteHeader(which)
+{
+    return document.getElementById("note-" + which).childNodes[0];
 }
 
 /**
@@ -204,10 +289,18 @@ function sanityCheckPassed()
     {
         ensureElementExists("all-info");
         ensureElementExists("character");
-        ensureElementExists("item-info-reading-mnemonic");
-        ensureElementExists("item-info-meaning-mnemonic");
         ensureElementExists("note-meaning");
-        ensureElementExists("note-reading");
+
+        if (isRadical())
+        {
+            ensureElementExists("item-info-col2");
+        }
+        else
+        {
+            ensureElementExists("item-info-reading-mnemonic");
+            ensureElementExists("item-info-meaning-mnemonic");
+            ensureElementExists("note-reading");
+        }
 
         if (isLesson())
         {
