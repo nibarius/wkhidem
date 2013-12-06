@@ -244,7 +244,6 @@ function setCorrectTextFor(which)
     }
 }
 
-
 /**
  * Get the DOM element that contains the mnemonic.
  * @param which Specifies if the header for the reading or meaning should
@@ -343,7 +342,7 @@ function getHeaders(which)
 
     var id = idPrefix + which;
     var parent = document.getElementById(id).getElementsByClassName(className)[0];
-    
+
     return {
         header: parent.children[0],
         explanation: parent.children[1],
@@ -361,20 +360,22 @@ function initLearning(prefix)
 function learningSetCorrectText()
 {
     learningSetCorrectTextFor("meaning");
-    learningSetCorrectTextFor("reading");
+    if (!isRadical())
+    {
+        learningSetCorrectTextFor("reading");
+    }
 }
 
 function learningSetCorrectTextFor(which)
 {
-    var character = document.getElementById("character").textContent.trim();
-    if (localStorage.getItem(character + "_" + which) != null)
+    if (isHidden(which))
     {
-        // Header currently hidden, the note header needs a show link
+        // Display the "show" link in the note.
          learningTextForHeader(which, "show", getHeaders(which).notes);
     }
     else
     {
-        // Meaning/Reading is currently shown, the header needs a hide link
+        // Display the "hide" link in the header.
         learningTextForHeader(which, "hide", getHeaders(which).header);
 
         // Make sure the default version of the Note header is displayed.
@@ -386,13 +387,8 @@ function learningSetCorrectTextFor(which)
 
 function learningTextForHeader(which, action, header)
 {
-    var hide_meaning_HTML = "<span id=\"hide-meaning\"> (hide)</span>";
-    var show_meaning_HTML = "<span id=\"show-meaning\"> (show original meaning)</span>";
-    var hide_reading_HTML = "<span id=\"hide-reading\"> (hide)</span>";
-    var show_reading_HTML = "<span id=\"show-reading\"> (show original explanation)</span>";
-
     // Add the show/hide link to the header.
-    header.innerHTML = header.firstChild.textContent + eval(action + "_" + which + "_HTML");
+    header.innerHTML = header.firstChild.textContent + getLinkHTML(which, action);
 
     // Set either hide(which) or show(which) as onclick handler.
     document.getElementById(action + "-" + which).onclick = function() { eval("learning_" + action)(which);}
@@ -401,8 +397,7 @@ function learningTextForHeader(which, action, header)
 function learning_show(which)
 {
     console.log("show " + which);
-    var character = document.getElementById("character").textContent.trim();
-    localStorage.removeItem(character + "_" + which);
+    clearStorage(which);
 
     var element = getHeaders(which).header;
     element.style.display=""
@@ -415,8 +410,7 @@ function learning_show(which)
 function learning_hide(which)
 {
     console.log("hide " + which);
-    var character = document.getElementById("character").textContent.trim();
-    localStorage.setItem(character + "_" + which, 0);
+    setStorage(which);
 
     var element = getHeaders(which).header;
     element.style.display="none"
@@ -428,16 +422,13 @@ function learning_hide(which)
 
 function learningHideIfNeeded()
 {
-    var character = document.getElementById("character").textContent.trim();
-    if (localStorage.getItem(character + "_meaning") != null)
+    if (isHidden("meaning"))
     {
-        // Meaning currently hidden
         learning_hide("meaning");
     }
 
-    if (localStorage.getItem(character + "_reading") != null)
+    if (!isRadical() && isHidden("reading"))
     {
-        // Reading currently hidden
         learning_hide("reading");
     }
 }
