@@ -17,10 +17,10 @@
  * This script is licensed under the MIT licence.
  */
 
-waitForKeyElements("#item-info-meaning-mnemonic", init);
-waitForKeyElements("#supplement-voc-meaning", function(){ initLearning("supplement-voc-");});
-waitForKeyElements("#supplement-kan-meaning", function(){ initLearning("supplement-kan-");});
-waitForKeyElements("#supplement-rad-meaning", function(){ initLearning("supplement-rad-name");});
+
+waitForKeyElements("#item-info-meaning-mnemonic", init); // review/lessons quiz
+
+waitForKeyElements("#supplement-info", init); // lessons
 
 function init()
 {
@@ -34,8 +34,11 @@ function init()
     setCorrectText();
     hideIfNeeded();
 
-    // Update visibility state when the "Show All Information" button is pressed.
-    document.getElementById("all-info").addEventListener("click", hideIfNeeded);
+    if (isQuiz())
+    {
+        // Update visibility state when the "Show All Information" button is pressed.
+        document.getElementById("all-info").addEventListener("click", hideIfNeeded);
+    }
 }
 
 /**
@@ -140,6 +143,19 @@ function isReview()
 }
 
 /**
+ * Returns true if the user is currently doing a quiz.
+ */
+function isQuiz()
+{
+    if (isReview())
+    {
+        return true;
+    }
+    var mainInfo = document.getElementById("main-info");
+    return mainInfo.parentElement.className == "quiz";
+}
+
+/**
  * Hide the reading and meaning sections if needed.
  */
 function hideIfNeeded()
@@ -162,7 +178,7 @@ function hideIfNeeded()
 function hide(which)
 {
     setStorage(which);
-    getMnemonicContainer(which).style.display="none"
+    setDisplayStyle(which, "none");
     setCorrectText();
 }
 
@@ -173,8 +189,46 @@ function hide(which)
 function show(which)
 {
     clearStorage(which);
-    getMnemonicContainer(which).style.display=""
+    setDisplayStyle(which, "");
     setCorrectText();
+}
+
+/**
+ * Set the display style of the hidable section.
+ * @param which The section that should be updated, either "reading" or "meaning".
+ * @param display The new value of the display css property.
+ */
+function setDisplayStyle(which, display)
+{
+    var children = getHidableElements(which);
+    for (i = 0; i < children.length; ++i)
+    {
+        children[i].style.display = display;
+    }
+}
+
+/**
+ * Returns an array with all elements that should be hidden or
+ * shown when the hide/show link is clicked.
+ * @param Specifies if it's the "reading" or "meaning" that should be hidden
+ */
+function getHidableElements(which)
+{
+    // return an array of items to hide/show
+    var ret = [];
+    if (isQuiz())
+    {
+        ret.push(getMnemonicContainer(which));
+    }
+    else
+    {
+        var children = getLearningContainer(which).children;
+        for (i = 0; i < children.length - 2; ++i) // note section is last 2 elments.
+        {
+            ret.push(children[i]);
+        }
+    }
+    return ret;
 }
 
 /**
@@ -254,7 +308,7 @@ function getMnemonicContainer(which)
 {
     if (isRadical())
     {
-        return document.getElementById("item-info-col2").childNodes[0];
+        return document.getElementById("item-info-col2").children[0];
     }
     else
     {
@@ -270,7 +324,14 @@ function getMnemonicContainer(which)
  */
 function getMnemonicHeader(which)
 {
-    return getMnemonicContainer(which).childNodes[0];
+    if (isQuiz())
+    {
+        return getMnemonicContainer(which).children[0];
+    }
+    else
+    {
+        return getLearningContainer(which).children[0];
+    }
 }
 
 /**
@@ -280,7 +341,41 @@ function getMnemonicHeader(which)
  */
 function getNoteHeader(which)
 {
-    return document.getElementById("note-" + which).childNodes[0];
+    if (isQuiz())
+    {
+        return document.getElementById("note-" + which).children[0];
+    }
+    else
+    {
+        var container = getLearningContainer(which);
+        return container.children[container.children.length - 2];
+    }
+}
+
+/**
+ * Get the container element of the mnemonics and notes in the learning
+ * part of lessons. There is no id available for the actual headers and
+ * mnemonics like in the quiz so the container element is the closest
+ * we get.
+ *
+ * @param which Specifies if it's the container for "reading" or "meaning"
+ *              that is desired.
+ */
+function getLearningContainer(which)
+{
+    var id = "supplement-" + getCharacterType().substring(0,3) + "-";
+    var className = "pure-u-3-4";
+    if (isRadical())
+    {
+        id += "name";
+        className = "pure-u-1"
+    }
+    else
+    {
+        id += which;
+    }
+
+    return document.getElementById(id).getElementsByClassName(className)[0];
 }
 
 /**
@@ -290,24 +385,43 @@ function sanityCheckPassed()
 {
     try
     {
-        ensureElementExists("all-info");
         ensureElementExists("character");
-        ensureElementExists("note-meaning");
-
-        if (isRadical())
-        {
-            ensureElementExists("item-info-col2");
-        }
-        else
-        {
-            ensureElementExists("item-info-reading-mnemonic");
-            ensureElementExists("item-info-meaning-mnemonic");
-            ensureElementExists("note-reading");
-        }
 
         if (isLesson())
         {
             ensureElementExists("main-info");
+        }
+
+        if (isQuiz())
+        {
+            ensureElementExists("all-info");
+            ensureElementExists("note-meaning");
+
+            if (isRadical())
+            {
+                ensureElementExists("item-info-col2");
+            }
+            else
+            {
+                ensureElementExists("item-info-reading-mnemonic");
+                ensureElementExists("item-info-meaning-mnemonic");
+                ensureElementExists("note-reading");
+            }
+        }
+        else // Lessons during learning
+        {
+            ensureElementExistsAndHasClass("supplement-voc-reading", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-voc-meaning", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-kan-reading", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-kan-meaning", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-rad-name", "pure-u-1");
+
+            // Make sure assumptions in isQuiz() holds.
+            var cn = document.getElementById("main-info").parentElement.className;
+            if (cn != "" && cn != "quiz")
+            {
+                throw new Error("Parent of 'main-info' is neither empty nor \"quiz\"");
+            }
         }
     }
     catch (e)
@@ -320,115 +434,26 @@ function sanityCheckPassed()
 
 /**
  * Throws an exception if the given id doesn't exist in the DOM tree.
+ * @return the element if it exist
  */
 function ensureElementExists(id)
 {
-    if (document.getElementById(id) == null)
+    var element = document.getElementById(id);
+    if (element == null)
     {
         throw new Error(id + " does not exist");
     }
+    return element;
 }
-///////////// Learning ///////////////
 
-var idPrefix;
-
-function getHeaders(which)
+/**
+ * Throws an exception if the given id doesn't exist in the DOM tree.
+ */
+function ensureElementExistsAndHasClass(id, className)
 {
-    var className = "pure-u-3-4";
-    if (idPrefix == "supplement-rad-name")
+    var element = ensureElementExists(id);
+    if (element.getElementsByClassName(className)[0] == null)
     {
-        className = "pure-u-1"
-    }
-
-    var id = idPrefix + which;
-    var parent = document.getElementById(id).getElementsByClassName(className)[0];
-
-    return {
-        header: parent.children[0],
-        explanation: parent.children[1],
-        notes: parent.children[2]
-        };
-}
-
-function initLearning(prefix)
-{
-    idPrefix = prefix;
-    learningSetCorrectText();
-    learningHideIfNeeded();
-}
-
-function learningSetCorrectText()
-{
-    learningSetCorrectTextFor("meaning");
-    if (!isRadical())
-    {
-        learningSetCorrectTextFor("reading");
-    }
-}
-
-function learningSetCorrectTextFor(which)
-{
-    if (isHidden(which))
-    {
-        // Display the "show" link in the note.
-         learningTextForHeader(which, "show", getHeaders(which).notes);
-    }
-    else
-    {
-        // Display the "hide" link in the header.
-        learningTextForHeader(which, "hide", getHeaders(which).header);
-
-        // Make sure the default version of the Note header is displayed.
-        var nh = getHeaders(which).notes;
-        nh.innerHTML = nh.firstChild.textContent;
-    }
-
-}
-
-function learningTextForHeader(which, action, header)
-{
-    // Add the show/hide link to the header.
-    header.innerHTML = header.firstChild.textContent + getLinkHTML(which, action);
-
-    // Set either hide(which) or show(which) as onclick handler.
-    document.getElementById(action + "-" + which).onclick = function() { eval("learning_" + action)(which);}
-}
-
-function learning_show(which)
-{
-    console.log("show " + which);
-    clearStorage(which);
-
-    var element = getHeaders(which).header;
-    element.style.display=""
-    element = getHeaders(which).explanation;
-    element.style.display=""
-
-    learningSetCorrectText();
-}
-
-function learning_hide(which)
-{
-    console.log("hide " + which);
-    setStorage(which);
-
-    var element = getHeaders(which).header;
-    element.style.display="none"
-    element = getHeaders(which).explanation;
-    element.style.display="none"
-
-    learningSetCorrectText();
-}
-
-function learningHideIfNeeded()
-{
-    if (isHidden("meaning"))
-    {
-        learning_hide("meaning");
-    }
-
-    if (!isRadical() && isHidden("reading"))
-    {
-        learning_hide("reading");
+        throw new Error(id + " does not contain any element with class: " + className);
     }
 }
