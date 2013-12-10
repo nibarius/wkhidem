@@ -95,6 +95,12 @@ function clearStorage(which)
 function getStorageKey(which)
 {
     var character = document.getElementById("character").textContent.trim();
+    if (character == "")
+    {
+        // Radical with image instead of text.
+        var src = document.getElementById("character").children[0].getAttribute("src");
+        character = src.split("/").pop()
+    }
     return getCharacterType() + "_" + character + "_" + which;
 }
 
@@ -391,6 +397,14 @@ function sanityCheckPassed()
     {
         ensureElementExists("character");
 
+        // Make sure we can get a correct storage key
+        var parts = getStorageKey("meaning").split("_");
+        if (parts.length != 3 || parts[0] == "" ||
+            parts[1] == ""    || parts[2] == "")
+        {
+            throw new Error("Unable to generate a correct storage key: " + key);
+        }
+        
         if (isLesson())
         {
             ensureElementExists("main-info");
