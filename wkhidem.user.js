@@ -6,9 +6,10 @@
 // @author Niklas Barsk
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
-// @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require  https://gist.github.com/raw/2625891/waitForKeyElements.js
-// @grant    GM_addStyle
+// @require http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
+// @require https://gist.github.com/raw/2625891/waitForKeyElements.js
+// @require https://raw.github.com/meetselva/attrchange/master/attrchange.js
+// @grant   GM_addStyle
 // @run-at document-end
 // @updateURL http://userscripts.org/scripts/source/184925.user.js
 // ==/UserScript==
@@ -17,14 +18,28 @@
  * This script is licensed under the MIT licence.
  */
 
-
-waitForKeyElements("#item-info-meaning-mnemonic", init); // review/lessons quiz
+// review/lessons quiz
+waitForKeyElements("#item-info-meaning-mnemonic", init);
 
 // The different types of lesson pages (non-quiz mode)
-waitForKeyElements("#main-info.radical", init);
-waitForKeyElements("#main-info.kanji", init);
-waitForKeyElements("#main-info.vocabulary", init);
+waitForKeyElements("#main-info.radical", initLesson);
+waitForKeyElements("#main-info.kanji", initLesson);
+waitForKeyElements("#main-info.vocabulary", initLesson);
 
+function initLesson()
+{
+    // The lessons are loaded in batches of several items and when
+    // switching page new data is updated via javascript and not by
+    // loading a new web page. Set up a listener that listens to
+    // changes to the main-info element and calls init() whenever
+    // it changes.
+    $("#main-info").attrchange({
+        trackValues: false,
+        callback: function(e)
+        {
+            init();
+        }});
+}
 
 function init()
 {
@@ -256,7 +271,7 @@ function textForHeader(which, action, header)
     header.innerHTML = header.firstChild.textContent + getLinkHTML(which, action);
 
     // Set either hide(which) or show(which) as onclick handler for the new link.
-    document.getElementById(action + "-" + which).onclick = function() { eval(action)(which);}
+    document.getElementById(getLinkId(which, action)).onclick = function() { eval(action)(which);}
 }
 
 /**
@@ -283,7 +298,15 @@ function getLinkHTML(which, action)
         }
     }
 
-    return "<span id=\"" + action + "-" + which + "\"> (" + linkText + ")</span>";
+    return "<span id=\"" + getLinkId(which, action) + "\"> (" + linkText + ")</span>";
+}
+
+/**
+ * Return the id of the show/hide link. 
+ */
+function getLinkId(which, action)
+{
+    return action + "-" + which + "-" + getCharacterType();
 }
 
 /**
@@ -404,7 +427,7 @@ function sanityCheckPassed()
         {
             throw new Error("Unable to generate a correct storage key: " + key);
         }
-        
+
         if (isLesson())
         {
             ensureElementExists("main-info");
