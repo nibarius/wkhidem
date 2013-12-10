@@ -28,11 +28,13 @@ waitForKeyElements("#main-info.vocabulary", initLesson);
 
 function initLesson()
 {
+    init();
+
     // The lessons are loaded in batches of several items and when
     // switching page new data is updated via javascript and not by
     // loading a new web page. Set up a listener that listens to
-    // changes to the main-info element and calls init() whenever
-    // it changes.
+    // changes to the main-info element and calls init() again
+    // whenever it changes.
     $("#main-info").attrchange({
         trackValues: false,
         callback: function(e)
@@ -302,7 +304,7 @@ function getLinkHTML(which, action)
 }
 
 /**
- * Return the id of the show/hide link. 
+ * Return the id of the show/hide link.
  */
 function getLinkId(which, action)
 {
