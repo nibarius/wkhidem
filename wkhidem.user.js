@@ -191,7 +191,7 @@ function setCorrectVisibility()
     {
         hide("meaning");
     }
-    else
+    else if (!isQuiz())
     {
         show("meaning");
     }
@@ -202,7 +202,7 @@ function setCorrectVisibility()
         {
             hide("reading");
         }
-        else
+        else if (!isQuiz())
         {
             show("reading");
         }
