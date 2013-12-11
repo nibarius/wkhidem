@@ -6,9 +6,10 @@
 // @author Niklas Barsk
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
-// @require  http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require  https://gist.github.com/raw/2625891/waitForKeyElements.js
-// @grant    GM_addStyle
+// @require http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
+// @require https://gist.github.com/raw/2625891/waitForKeyElements.js
+// @require https://raw.github.com/meetselva/attrchange/master/attrchange.js
+// @grant   GM_addStyle
 // @run-at document-end
 // @updateURL http://userscripts.org/scripts/source/184925.user.js
 // ==/UserScript==
@@ -17,7 +18,33 @@
  * This script is licensed under the MIT licence.
  */
 
-waitForKeyElements ("#item-info-meaning-mnemonic", init);
+// review/lessons quiz
+waitForKeyElements("#note-meaning", init);
+
+// The different types of lesson pages (non-quiz mode)
+waitForKeyElements("#main-info.radical", initLesson);
+waitForKeyElements("#main-info.kanji", initLesson);
+waitForKeyElements("#main-info.vocabulary", initLesson);
+
+function initLesson()
+{
+    init();
+
+    // The lessons are loaded in batches of several items and when
+    // switching page new data is updated via javascript and not by
+    // loading a new web page. Set up a listener that listens to
+    // changes to the main-info element and calls init() again
+    // whenever it changes.
+    $("#main-info").attrchange({
+        trackValues: false,
+        callback: function(e)
+        {
+            if(!isQuiz())
+            {
+                init();
+            }
+        }});
+}
 
 function init()
 {
@@ -29,10 +56,13 @@ function init()
     }
 
     setCorrectText();
-    hideIfNeeded();
+    setCorrectVisibility();
 
-    // Update visibility state when the "Show All Information" button is pressed.
-    document.getElementById("all-info").addEventListener("click", hideIfNeeded);
+    if (isQuiz())
+    {
+        // Update visibility state when the "Show All Information" button is pressed.
+        document.getElementById("all-info").addEventListener("click", setCorrectVisibility);
+    }
 }
 
 /**
@@ -85,6 +115,12 @@ function clearStorage(which)
 function getStorageKey(which)
 {
     var character = document.getElementById("character").textContent.trim();
+    if (character == "")
+    {
+        // Radical with image instead of text.
+        var src = document.getElementById("character").children[0].getAttribute("src");
+        character = src.split("/").pop()
+    }
     return getCharacterType() + "_" + character + "_" + which;
 }
 
@@ -137,18 +173,42 @@ function isReview()
 }
 
 /**
- * Hide the reading and meaning sections if needed.
+ * Returns true if the user is currently doing a quiz.
  */
-function hideIfNeeded()
+function isQuiz()
+{
+    if (isReview())
+    {
+        return true;
+    }
+    var mainInfo = document.getElementById("main-info");
+    return mainInfo.parentElement.className == "quiz";
+}
+
+/**
+ * Set the correct visibility of the reading and meaning sections.
+ */
+function setCorrectVisibility()
 {
     if (isHidden("meaning"))
     {
         hide("meaning");
     }
-
-    if (!isRadical() && isHidden("reading"))
+    else if (!isQuiz())
     {
-        hide("reading");
+        show("meaning");
+    }
+
+    if (!isRadical())
+    {
+        if (isHidden("reading"))
+        {
+            hide("reading");
+        }
+        else if (!isQuiz())
+        {
+            show("reading");
+        }
     }
 }
 
@@ -159,7 +219,7 @@ function hideIfNeeded()
 function hide(which)
 {
     setStorage(which);
-    getMnemonicContainer(which).style.display="none"
+    setDisplayStyle(which, "none");
     setCorrectText();
 }
 
@@ -170,8 +230,46 @@ function hide(which)
 function show(which)
 {
     clearStorage(which);
-    getMnemonicContainer(which).style.display=""
+    setDisplayStyle(which, "");
     setCorrectText();
+}
+
+/**
+ * Set the display style of the hidable section.
+ * @param which The section that should be updated, either "reading" or "meaning".
+ * @param display The new value of the display css property.
+ */
+function setDisplayStyle(which, display)
+{
+    var children = getHidableElements(which);
+    for (i = 0; i < children.length; ++i)
+    {
+        children[i].style.display = display;
+    }
+}
+
+/**
+ * Returns an array with all elements that should be hidden or
+ * shown when the hide/show link is clicked.
+ * @param Specifies if it's the "reading" or "meaning" that should be hidden
+ */
+function getHidableElements(which)
+{
+    // return an array of items to hide/show
+    var ret = [];
+    if (isQuiz())
+    {
+        ret.push(getMnemonicContainer(which));
+    }
+    else
+    {
+        var children = getLearningContainer(which).children;
+        for (i = 0; i < children.length - 2; ++i) // note section is last 2 elments.
+        {
+            ret.push(children[i]);
+        }
+    }
+    return ret;
 }
 
 /**
@@ -189,7 +287,7 @@ function textForHeader(which, action, header)
     header.innerHTML = header.firstChild.textContent + getLinkHTML(which, action);
 
     // Set either hide(which) or show(which) as onclick handler for the new link.
-    document.getElementById(action + "-" + which).onclick = function() { eval(action)(which);}
+    document.getElementById(getLinkId(which, action)).onclick = function() { eval(action)(which);}
 }
 
 /**
@@ -216,7 +314,16 @@ function getLinkHTML(which, action)
         }
     }
 
-    return "<span id=\"" + action + "-" + which + "\"> (" + linkText + ")</span>";
+    return "<span id=\"" + getLinkId(which, action) + "\"> (" + linkText + ")</span>";
+}
+
+/**
+ * Return the id of the show/hide link.
+ */
+function getLinkId(which, action)
+{
+    var quiz = isQuiz() ? "-q" : "";
+    return action + "-" + which + "-" + getCharacterType() + quiz;
 }
 
 /**
@@ -251,7 +358,7 @@ function getMnemonicContainer(which)
 {
     if (isRadical())
     {
-        return document.getElementById("item-info-col2").childNodes[0];
+        return document.getElementById("item-info-col2").children[0];
     }
     else
     {
@@ -267,7 +374,14 @@ function getMnemonicContainer(which)
  */
 function getMnemonicHeader(which)
 {
-    return getMnemonicContainer(which).childNodes[0];
+    if (isQuiz())
+    {
+        return getMnemonicContainer(which).children[0];
+    }
+    else
+    {
+        return getLearningContainer(which).children[0];
+    }
 }
 
 /**
@@ -277,7 +391,41 @@ function getMnemonicHeader(which)
  */
 function getNoteHeader(which)
 {
-    return document.getElementById("note-" + which).childNodes[0];
+    if (isQuiz())
+    {
+        return document.getElementById("note-" + which).children[0];
+    }
+    else
+    {
+        var container = getLearningContainer(which);
+        return container.children[container.children.length - 2];
+    }
+}
+
+/**
+ * Get the container element of the mnemonics and notes in the learning
+ * part of lessons. There is no id available for the actual headers and
+ * mnemonics like in the quiz so the container element is the closest
+ * we get.
+ *
+ * @param which Specifies if it's the container for "reading" or "meaning"
+ *              that is desired.
+ */
+function getLearningContainer(which)
+{
+    var id = "supplement-" + getCharacterType().substring(0,3) + "-";
+    var className = "pure-u-3-4";
+    if (isRadical())
+    {
+        id += "name";
+        className = "pure-u-1"
+    }
+    else
+    {
+        id += which;
+    }
+
+    return document.getElementById(id).getElementsByClassName(className)[0];
 }
 
 /**
@@ -287,24 +435,51 @@ function sanityCheckPassed()
 {
     try
     {
-        ensureElementExists("all-info");
         ensureElementExists("character");
-        ensureElementExists("note-meaning");
 
-        if (isRadical())
+        // Make sure we can get a correct storage key
+        var parts = getStorageKey("meaning").split("_");
+        if (parts.length != 3 || parts[0] == "" ||
+            parts[1] == ""    || parts[2] == "")
         {
-            ensureElementExists("item-info-col2");
-        }
-        else
-        {
-            ensureElementExists("item-info-reading-mnemonic");
-            ensureElementExists("item-info-meaning-mnemonic");
-            ensureElementExists("note-reading");
+            throw new Error("Unable to generate a correct storage key: " + key);
         }
 
         if (isLesson())
         {
             ensureElementExists("main-info");
+        }
+
+        if (isQuiz())
+        {
+            ensureElementExists("all-info");
+            ensureElementExists("note-meaning");
+
+            if (isRadical())
+            {
+                ensureElementExists("item-info-col2");
+            }
+            else
+            {
+                ensureElementExists("item-info-reading-mnemonic");
+                ensureElementExists("item-info-meaning-mnemonic");
+                ensureElementExists("note-reading");
+            }
+        }
+        else // Lessons during learning
+        {
+            ensureElementExistsAndHasClass("supplement-voc-reading", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-voc-meaning", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-kan-reading", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-kan-meaning", "pure-u-3-4");
+            ensureElementExistsAndHasClass("supplement-rad-name", "pure-u-1");
+
+            // Make sure assumptions in isQuiz() holds.
+            var cn = document.getElementById("main-info").parentElement.className;
+            if (cn != "" && cn != "quiz")
+            {
+                throw new Error("Parent of 'main-info' is neither empty nor \"quiz\"");
+            }
         }
     }
     catch (e)
@@ -317,11 +492,26 @@ function sanityCheckPassed()
 
 /**
  * Throws an exception if the given id doesn't exist in the DOM tree.
+ * @return the element if it exist
  */
 function ensureElementExists(id)
 {
-    if (document.getElementById(id) == null)
+    var element = document.getElementById(id);
+    if (element == null)
     {
         throw new Error(id + " does not exist");
+    }
+    return element;
+}
+
+/**
+ * Throws an exception if the given id doesn't exist in the DOM tree.
+ */
+function ensureElementExistsAndHasClass(id, className)
+{
+    var element = ensureElementExists(id);
+    if (element.getElementsByClassName(className)[0] == null)
+    {
+        throw new Error(id + " does not contain any element with class: " + className);
     }
 }
