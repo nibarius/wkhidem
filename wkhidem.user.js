@@ -319,7 +319,8 @@ function getLinkHTML(which, action)
  */
 function getLinkId(which, action)
 {
-    return action + "-" + which + "-" + getCharacterType();
+    var quiz = isQuiz() ? "-q" : "";
+    return action + "-" + which + "-" + getCharacterType() + quiz;
 }
 
 /**
