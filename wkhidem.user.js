@@ -53,12 +53,12 @@ function init()
     }
 
     setCorrectText();
-    hideIfNeeded();
+    setCorrectVisibility();
 
     if (isQuiz())
     {
         // Update visibility state when the "Show All Information" button is pressed.
-        document.getElementById("all-info").addEventListener("click", hideIfNeeded);
+        document.getElementById("all-info").addEventListener("click", setCorrectVisibility);
     }
 }
 
@@ -183,18 +183,29 @@ function isQuiz()
 }
 
 /**
- * Hide the reading and meaning sections if needed.
+ * Set the correct visibility of the reading and meaning sections.
  */
-function hideIfNeeded()
+function setCorrectVisibility()
 {
     if (isHidden("meaning"))
     {
         hide("meaning");
     }
-
-    if (!isRadical() && isHidden("reading"))
+    else
     {
-        hide("reading");
+        show("meaning");
+    }
+
+    if (!isRadical())
+    {
+        if (isHidden("reading"))
+        {
+            hide("reading");
+        }
+        else
+        {
+            show("reading");
+        }
     }
 }
 
