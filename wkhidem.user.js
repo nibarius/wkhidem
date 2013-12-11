@@ -19,7 +19,7 @@
  */
 
 // review/lessons quiz
-waitForKeyElements("#item-info-meaning-mnemonic", init);
+waitForKeyElements("#note-meaning", init);
 
 // The different types of lesson pages (non-quiz mode)
 waitForKeyElements("#main-info.radical", initLesson);
