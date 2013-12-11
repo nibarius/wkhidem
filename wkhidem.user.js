@@ -39,7 +39,10 @@ function initLesson()
         trackValues: false,
         callback: function(e)
         {
-            init();
+            if(!isQuiz())
+            {
+                init();
+            }
         }});
 }
 
