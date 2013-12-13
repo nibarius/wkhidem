@@ -1,11 +1,14 @@
 // ==UserScript==
 // @name WaniKani hide mnemonics
 // @namespace wkhidem
-// @description Adds a possiblity to hide meaning and reading mnemonics during lessons and review.
-// @version 1.2
+// @description Adds a possiblity to hide meaning and reading mnemonics.
+// @version 1.3
 // @author Niklas Barsk
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
+// @include http://www.wanikani.com/radicals/*
+// @include http://www.wanikani.com/kanji/*
+// @include http://www.wanikani.com/vocabulary/*
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require https://gist.github.com/raw/2625891/waitForKeyElements.js
 // @require https://raw.github.com/meetselva/attrchange/master/attrchange.js
@@ -18,13 +21,19 @@
  * This script is licensed under the MIT licence.
  */
 
-// review/lessons quiz
-waitForKeyElements("#note-meaning", init);
+if (isReview() || isLesson())
+{
+    // review/lessons quiz
+    waitForKeyElements("#note-meaning", init);
+}
 
-// The different types of lesson pages (non-quiz mode)
-waitForKeyElements("#main-info.radical", initLesson);
-waitForKeyElements("#main-info.kanji", initLesson);
-waitForKeyElements("#main-info.vocabulary", initLesson);
+if (isLesson())
+{
+    // The different types of lesson pages (non-quiz mode)
+    waitForKeyElements("#main-info.radical", initLesson);
+    waitForKeyElements("#main-info.kanji", initLesson);
+    waitForKeyElements("#main-info.vocabulary", initLesson);
+}
 
 function initLesson()
 {
@@ -114,14 +123,35 @@ function clearStorage(which)
  */
 function getStorageKey(which)
 {
-    var character = document.getElementById("character").textContent.trim();
+    return getCharacterType() + "_" + getCharacter() + "_" + which;
+}
+
+/**
+ * Return a textual representation of the current character.
+ * For vocabulary, kanji and normal radicals it is the vocabulary, 
+ * kanji, or radical itself. For radicals that are just an image
+ * it is the file name of the image.
+ */
+function getCharacter()
+{
+    var element;
+    if (isLookup())
+    {
+        element = document.getElementsByClassName("japanese-font-styling-correction")[0];
+    }
+    else
+    {
+        element = document.getElementById("character");
+    }
+
+    var character = element.textContent.trim();
     if (character == "")
     {
         // Radical with image instead of text.
-        var src = document.getElementById("character").children[0].getAttribute("src");
+        var src = element.children[0].getAttribute("src");
         character = src.split("/").pop()
     }
-    return getCharacterType() + "_" + character + "_" + which;
+    return character
 }
 
 /**
@@ -137,6 +167,12 @@ function getCharacterType()
     else if (isReview())
     {
         return document.getElementById("character").className.trim();
+    }
+    else if (isLookup())
+    {
+        var character = document.getElementsByClassName("japanese-font-styling-correction")[0];
+        var cn = character.parentElement.className;
+        return cn.substr(0, cn.indexOf("-"));
     }
 }
 
@@ -154,6 +190,13 @@ function isRadical()
 function isVocabulary()
 {
     return getCharacterType() == "vocabulary";
+}
+
+function isLookup()
+{
+    return document.URL.indexOf("/radicals/") != -1 ||
+           document.URL.indexOf("/kanji/") != -1 ||
+           document.URL.indexOf("/vocabulary/") != -1;
 }
 
 /**
@@ -181,8 +224,12 @@ function isQuiz()
     {
         return true;
     }
-    var mainInfo = document.getElementById("main-info");
-    return mainInfo.parentElement.className == "quiz";
+    if (isLesson())
+    {
+        var mainInfo = document.getElementById("main-info");
+        return mainInfo.parentElement.className == "quiz";
+    }
+    return false;
 }
 
 /**
@@ -261,12 +308,27 @@ function getHidableElements(which)
     {
         ret.push(getMnemonicContainer(which));
     }
-    else
+    else if (isLesson())
     {
         var children = getLearningContainer(which).children;
         for (i = 0; i < children.length - 2; ++i) // note section is last 2 elments.
         {
             ret.push(children[i]);
+        }
+    }
+    else if (isLookup())
+    {
+        if (isRadical())
+        {
+            ret.push(document.getElementById("note-" + which).previousElementSibling);
+        }
+        else
+        {
+            var children = document.getElementById("note-" + which).parentElement.children;
+            for (i = 0; i < children.length - 1; ++i) // note section is last 1 elments.
+            {
+                ret.push(children[i]);
+            }
         }
     }
     return ret;
@@ -378,9 +440,20 @@ function getMnemonicHeader(which)
     {
         return getMnemonicContainer(which).children[0];
     }
-    else
+    else if (isLesson())
     {
         return getLearningContainer(which).children[0];
+    }
+    else if(isLookup())
+    {
+        if (isRadical())
+        {
+            return document.getElementById("note-" + which).previousElementSibling.children[0];
+        }
+        else
+        {
+            return document.getElementById("note-" + which).parentElement.children[0];
+        }
     }
 }
 
@@ -391,11 +464,11 @@ function getMnemonicHeader(which)
  */
 function getNoteHeader(which)
 {
-    if (isQuiz())
+    if (isQuiz() || isLookup())
     {
         return document.getElementById("note-" + which).children[0];
     }
-    else
+    else if (isLesson())
     {
         var container = getLearningContainer(which);
         return container.children[container.children.length - 2];
@@ -435,7 +508,18 @@ function sanityCheckPassed()
 {
     try
     {
-        ensureElementExists("character");
+        if (isLookup())
+        {
+            if (document.getElementsByClassName("japanese-font-styling-correction").length == 0)
+            {
+                throw new Error("No element with class 'japanese-font-styling-correction' exists");
+            }
+            ensureElementExists("note-meaning");
+        }
+        else
+        {
+            ensureElementExists("character");
+        }
 
         // Make sure we can get a correct storage key
         var parts = getStorageKey("meaning").split("_");
@@ -466,7 +550,7 @@ function sanityCheckPassed()
                 ensureElementExists("note-reading");
             }
         }
-        else // Lessons during learning
+        else if (isLesson()) // Lessons during learning
         {
             ensureElementExistsAndHasClass("supplement-voc-reading", "pure-u-3-4");
             ensureElementExistsAndHasClass("supplement-voc-meaning", "pure-u-3-4");
@@ -480,6 +564,13 @@ function sanityCheckPassed()
             {
                 throw new Error("Parent of 'main-info' is neither empty nor \"quiz\"");
             }
+        }
+        
+        // Make sure we can get a correct character type.
+        var ct = getCharacterType();
+        if (ct != "radical" && ct != "vocabulary" && ct != "kanji")
+        {
+            throw new Error("Unknown character type: " + ct);
         }
     }
     catch (e)
