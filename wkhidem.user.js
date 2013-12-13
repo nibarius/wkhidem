@@ -35,6 +35,11 @@ if (isLesson())
     waitForKeyElements("#main-info.vocabulary", initLesson);
 }
 
+if (isLookup())
+{
+    init();
+}
+
 function initLesson()
 {
     init();
