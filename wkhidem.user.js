@@ -128,7 +128,7 @@ function getStorageKey(which)
 
 /**
  * Return a textual representation of the current character.
- * For vocabulary, kanji and normal radicals it is the vocabulary, 
+ * For vocabulary, kanji and normal radicals it is the vocabulary,
  * kanji, or radical itself. For radicals that are just an image
  * it is the file name of the image.
  */
@@ -311,7 +311,7 @@ function getHidableElements(which)
     else if (isLesson())
     {
         var children = getLearningContainer(which).children;
-        for (i = 0; i < children.length - 2; ++i) // note section is last 2 elments.
+        for (i = 0; i < children.length - 2; ++i) // note section is last 2 elements.
         {
             ret.push(children[i]);
         }
@@ -320,12 +320,12 @@ function getHidableElements(which)
     {
         if (isRadical())
         {
-            ret.push(document.getElementById("note-" + which).previousElementSibling);
+            ret.push(getLookupMnemonicContainer(which));
         }
         else
         {
-            var children = document.getElementById("note-" + which).parentElement.children;
-            for (i = 0; i < children.length - 1; ++i) // note section is last 1 elments.
+            var children = getLookupMnemonicContainer(which).children;
+            for (i = 0; i < children.length - 1; ++i) // note section is the last element.
             {
                 ret.push(children[i]);
             }
@@ -429,6 +429,21 @@ function getMnemonicContainer(which)
 }
 
 /**
+ * Return the element that contains the mnemonics for the lookup pages.
+ */
+function getLookupMnemonicContainer(which)
+{
+    if (isRadical())
+    {
+        return document.getElementById("note-" + which).previousElementSibling;
+    }
+    else
+    {
+        return document.getElementById("note-" + which).parentElement;
+    }
+}
+
+/**
  * Get the DOM element for the mnemonic header.
  * @param which Specifies if the header for the reading or meaning should
  *              be returned. The parameter is ignored for radicals since
@@ -446,14 +461,7 @@ function getMnemonicHeader(which)
     }
     else if(isLookup())
     {
-        if (isRadical())
-        {
-            return document.getElementById("note-" + which).previousElementSibling.children[0];
-        }
-        else
-        {
-            return document.getElementById("note-" + which).parentElement.children[0];
-        }
+        return getLookupMnemonicContainer(which).children[0];
     }
 }
 
@@ -510,15 +518,24 @@ function sanityCheckPassed()
     {
         if (isLookup())
         {
-            if (document.getElementsByClassName("japanese-font-styling-correction").length == 0)
-            {
-                throw new Error("No element with class 'japanese-font-styling-correction' exists");
-            }
-            ensureElementExists("note-meaning");
+            sanityCheckLookup();
         }
-        else
+
+        if (isQuiz())
         {
-            ensureElementExists("character");
+            sanityCheckQuiz();
+        }
+
+        if (isLesson())
+        {
+            sanityCheckLesson();
+        }
+
+        // Make sure we can get a correct character type.
+        var ct = getCharacterType();
+        if (ct != "radical" && ct != "vocabulary" && ct != "kanji")
+        {
+            throw new Error("Unknown character type: " + ct);
         }
 
         // Make sure we can get a correct storage key
@@ -528,50 +545,6 @@ function sanityCheckPassed()
         {
             throw new Error("Unable to generate a correct storage key: " + key);
         }
-
-        if (isLesson())
-        {
-            ensureElementExists("main-info");
-        }
-
-        if (isQuiz())
-        {
-            ensureElementExists("all-info");
-            ensureElementExists("note-meaning");
-
-            if (isRadical())
-            {
-                ensureElementExists("item-info-col2");
-            }
-            else
-            {
-                ensureElementExists("item-info-reading-mnemonic");
-                ensureElementExists("item-info-meaning-mnemonic");
-                ensureElementExists("note-reading");
-            }
-        }
-        else if (isLesson()) // Lessons during learning
-        {
-            ensureElementExistsAndHasClass("supplement-voc-reading", "pure-u-3-4");
-            ensureElementExistsAndHasClass("supplement-voc-meaning", "pure-u-3-4");
-            ensureElementExistsAndHasClass("supplement-kan-reading", "pure-u-3-4");
-            ensureElementExistsAndHasClass("supplement-kan-meaning", "pure-u-3-4");
-            ensureElementExistsAndHasClass("supplement-rad-name", "pure-u-1");
-
-            // Make sure assumptions in isQuiz() holds.
-            var cn = document.getElementById("main-info").parentElement.className;
-            if (cn != "" && cn != "quiz")
-            {
-                throw new Error("Parent of 'main-info' is neither empty nor \"quiz\"");
-            }
-        }
-        
-        // Make sure we can get a correct character type.
-        var ct = getCharacterType();
-        if (ct != "radical" && ct != "vocabulary" && ct != "kanji")
-        {
-            throw new Error("Unknown character type: " + ct);
-        }
     }
     catch (e)
     {
@@ -579,6 +552,67 @@ function sanityCheckPassed()
         return false;
     }
     return true;
+}
+
+/**
+ * Throws an exception if the critical assumptions made about the
+ * HTML code in the lookup related code are wrong.
+ */
+function sanityCheckLookup()
+{
+    if (document.getElementsByClassName("japanese-font-styling-correction").length == 0)
+    {
+        throw new Error("No element with class 'japanese-font-styling-correction' exists");
+    }
+    ensureElementExists("note-meaning");
+}
+
+/**
+ * Throws an exception if the critical assumptions made about the
+ * HTML code in the quiz related code are wrong.
+ */
+function sanityCheckQuiz()
+{
+    ensureElementExists("character");
+    ensureElementExists("all-info");
+    ensureElementExists("note-meaning");
+
+    if (isRadical())
+    {
+        ensureElementExists("item-info-col2");
+    }
+    else
+    {
+        ensureElementExists("item-info-reading-mnemonic");
+        ensureElementExists("item-info-meaning-mnemonic");
+        ensureElementExists("note-reading");
+    }
+}
+
+/**
+ * Throws an exception if the critical assumptions made about the
+ * HTML code in the lesson related code are wrong.
+ */
+function sanityCheckLesson()
+{
+    ensureElementExists("character");
+    var mainInfo = ensureElementExists("main-info");
+
+    // Make sure assumptions for lessons in isQuiz() holds.
+    var cn = mainInfo.parentElement.className;
+    if (cn != "" && cn != "quiz")
+    {
+        throw new Error("Parent of 'main-info' is neither empty nor \"quiz\"");
+    }
+
+    if (!isQuiz())
+    {
+        ensureElementExistsAndHasClass("supplement-voc-reading", "pure-u-3-4");
+        ensureElementExistsAndHasClass("supplement-voc-meaning", "pure-u-3-4");
+        ensureElementExistsAndHasClass("supplement-kan-reading", "pure-u-3-4");
+        ensureElementExistsAndHasClass("supplement-kan-meaning", "pure-u-3-4");
+        ensureElementExistsAndHasClass("supplement-rad-name", "pure-u-1");
+    }
 }
 
 /**
