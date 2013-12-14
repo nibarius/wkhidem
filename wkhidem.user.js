@@ -37,7 +37,14 @@ if (isLesson())
 
 if (isLookup())
 {
-    init();
+    var currentLevel = document.getElementsByClassName("dropdown-toggle")[0].children[0].textContent.trim();
+    var itemLevel = document.getElementsByClassName("level-icon")[0].textContent.trim();
+    if (currentLevel >= itemLevel)
+    {
+        // only run the script on items that has been unlocked since it's
+        // not possible to add user mnemonics on locked items.
+        init();
+    }
 }
 
 function initLesson()
