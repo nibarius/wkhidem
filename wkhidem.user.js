@@ -2,7 +2,7 @@
 // @name WaniKani hide mnemonics
 // @namespace wkhidem
 // @description Adds a possiblity to hide meaning and reading mnemonics.
-// @version 1.4
+// @version 1.5
 // @author Niklas Barsk
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
@@ -103,23 +103,44 @@ function setCorrectText()
  */
 function isHidden(which)
 {
-    return localStorage.getItem(getStorageKey(which)) != null
+    return isManuallyHidden(which) || isAutomaticallyHidden(which);
+}
+
+/**
+ * Returns true if the user has hidden the mnemonic with the hide link.
+ */
+function isManuallyHidden(which)
+{
+    return localStorage.getItem(getStorageKey(which)) == "0";
+}
+
+/**
+ * Returns true if the mnemonic has been hidden because there
+ * is a note present.
+ */
+function isAutomaticallyHidden(which)
+{
+    return hasNote(which) &&
+           localStorage.getItem(getStorageKey(which)) != "1";
 }
 
 /**
  * Set hidden status for the current character in the localStorage
  * for the give type.
- * @param "reading" or "meaning" depending on which key is desired.
+ * @param which "reading" or "meaning" depending on which key is desired.
+ * @param what new value for the current character:
+ *             0: user has manually hidden the mnemonic.
+ *             1: user has shown an automatically hidden mnemonic.
  */
-function setStorage(which)
+function setStorage(which, what)
 {
-    localStorage.setItem(getStorageKey(which), 0);
+    localStorage.setItem(getStorageKey(which), what);
 }
 
 /**
  * Remove the stored information about the current character from
  * the localStorage for the give type.
- * @param "reading" or "meaning" depending on which key is desired.
+ * @param which "reading" or "meaning" depending on which key is desired.
  */
 function clearStorage(which)
 {
@@ -243,6 +264,16 @@ function isQuiz()
 }
 
 /**
+ * Returns true if the current item has a note set.
+ * @param which specifies if it's the reading or meaning
+ *              note that is of interest.
+ */
+function hasNote(which)
+{
+    return document.getElementById("note-" + which).children[1].textContent.trim() != "Click to add note";
+}
+
+/**
  * Set the correct visibility of the reading and meaning sections.
  */
 function setCorrectVisibility()
@@ -275,7 +306,7 @@ function setCorrectVisibility()
  */
 function hide(which)
 {
-    setStorage(which);
+    setStorage(which, 0);
     setDisplayStyle(which, "none");
     setCorrectText();
 }
@@ -286,7 +317,14 @@ function hide(which)
  */
 function show(which)
 {
-    clearStorage(which);
+    if (hasNote(which))
+    {
+        setStorage(which, 1);
+    }
+    else
+    {
+        clearStorage(which);
+    }
     setDisplayStyle(which, "");
     setCorrectText();
 }
@@ -541,6 +579,12 @@ function sanityCheckPassed()
             sanityCheckLesson();
         }
 
+        ensureElementExists("note-meaning");
+        if (!isRadical())
+        {
+            ensureElementExists("note-reading");
+        }        
+        
         // Make sure we can get a correct character type.
         var ct = getCharacterType();
         if (ct != "radical" && ct != "vocabulary" && ct != "kanji")
@@ -574,7 +618,6 @@ function sanityCheckLookup()
     {
         throw new Error("No element with class 'japanese-font-styling-correction' exists");
     }
-    ensureElementExists("note-meaning");
 }
 
 /**
@@ -585,7 +628,6 @@ function sanityCheckQuiz()
 {
     ensureElementExists("character");
     ensureElementExists("all-info");
-    ensureElementExists("note-meaning");
 
     if (isRadical())
     {
