@@ -82,6 +82,40 @@ function init()
         // Update visibility state when the "Show All Information" button is pressed.
         document.getElementById("all-info").addEventListener("click", setCorrectVisibility);
     }
+
+    // Setup listeners for changes to the note-meaning/reading.
+    var noteMeaning = document.getElementById("note-meaning");
+    noteMeaning.addEventListener("DOMNodeInserted", onNoteChanged);
+    
+    if (!isRadical())
+    {
+        var noteReading = document.getElementById("note-reading");
+        noteReading.addEventListener("DOMNodeInserted", onNoteChanged);
+    }
+}
+
+/**
+ * Called whenever a new DOM node is inserted into the note-reading
+ * or note-meaning elements.
+ */
+function onNoteChanged(e)
+{
+    var div = this.children[1];
+    if (e.relatedNode != div)
+    {
+        // The recently inserted DOM node is not a direct child to
+        // the note-meaning <div> element, ignore it.
+        return;
+    }
+    if (div.children.length == 0)
+    {
+        // The note-meaning <div> has no children, this means that
+        // it just contains the note text. If it has children it
+        // the edit note form is displayed.
+        // In other words the note section just went from edit
+        // to display mode, visibility must be updated.
+        setCorrectVisibility();
+    }
 }
 
 /**
