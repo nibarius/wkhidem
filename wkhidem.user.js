@@ -301,12 +301,39 @@ function setCorrectVisibility()
 }
 
 /**
+ * Set the correct state in local storage for the current item
+ * and mnenemonic based on the given action.
+ * @param action "hide" or "show"
+ * @param which "reading" or "meaning"
+ */
+ function setCorrectStorage(action, which)
+{
+    var note = hasNote(which);
+    if (action == "show" && !note ||
+        action == "hide" && note)
+    {
+        // Default state, cleare any storage
+        clearStorage(which);
+    }
+    else if (action == "show" && note)
+    {
+        // Force section to be visible
+        setStorage(which, 1);
+    }
+    else if (action == "hide" && !note)
+    {
+        // Force section to be hidden
+        setStorage(which, 0);
+    }
+}
+
+/**
  * Hide the specified section.
  * @param which The section that should be hidden, either "reading" or "meaning".
  */
 function hide(which)
 {
-    setStorage(which, 0);
+    setCorrectStorage("hide", which);
     setDisplayStyle(which, "none");
     setCorrectText();
 }
@@ -317,14 +344,7 @@ function hide(which)
  */
 function show(which)
 {
-    if (hasNote(which))
-    {
-        setStorage(which, 1);
-    }
-    else
-    {
-        clearStorage(which);
-    }
+    setCorrectStorage("show", which);
     setDisplayStyle(which, "");
     setCorrectText();
 }
