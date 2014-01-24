@@ -89,37 +89,31 @@ function init()
     }
 
     // Setup listeners for changes to the note-meaning/reading.
+    var mo = new MutationObserver(onNoteChanged);
+    var options = {'childList': true, 'subtree': true};
     var noteMeaning = document.getElementById("note-meaning");
-    noteMeaning.addEventListener("DOMNodeInserted", onNoteChanged);
+    mo.observe(noteMeaning, options);
     
     if (!isRadical())
     {
         var noteReading = document.getElementById("note-reading");
-        noteReading.addEventListener("DOMNodeInserted", onNoteChanged);
+        mo.observe(noteReading, options);
     }
 }
 
 /**
- * Called whenever a new DOM node is inserted into the note-reading
- * or note-meaning elements.
+ * Called whenever the note-reading or note-meaning elements children
+ * are updated.
  */
-function onNoteChanged(e)
+function onNoteChanged(allmutations)
 {
-    var div = this.children[1];
-    if (e.relatedNode != div)
+    if (allmutations.length == 2)
     {
-        // The recently inserted DOM node is not a direct child to
-        // the note-meaning <div> element, ignore it.
-        return;
-    }
-    if (div.children.length == 0)
-    {
-        // The note-meaning <div> has no children, this means that
-        // it just contains the note text. If it has children it
-        // the edit note form is displayed.
-        // In other words the note section just went from edit
-        // to display mode, visibility must be updated.
-        setCorrectVisibility();
+        // 2 nodes inserted (Note header and note div), this means the
+        // note section just went from edit to display mode,
+        // visibility must be updated.
+        var which = allmutations[0].target.parentNode.id.split('-')[1];
+        setCorrectVisibilityFor(which);
     }
 }
 
