@@ -317,26 +317,51 @@ function hasNote(which)
  */
 function setCorrectVisibility()
 {
-    if (isHidden("meaning"))
-    {
-        hide("meaning");
-    }
-    else if (!isQuiz())
-    {
-        show("meaning");
-    }
-
+    setCorrectVisibilityFor("meaning");
     if (!isRadical())
     {
-        if (isHidden("reading"))
-        {
-            hide("reading");
-        }
-        else if (!isQuiz())
-        {
-            show("reading");
-        }
+        setCorrectVisibilityFor("reading");
     }
+}
+
+/**
+ * Set the correct visibility for the specified header depending on the current state.
+ * @param which The header that should be updated, either "reading" or "meaning".
+ */
+function setCorrectVisibilityFor(which)
+{
+    if (hiddenByWaniKani(which))
+    {
+        // Don't touch visibility for things hidden by WaniKani.
+        return;
+    }
+
+    if (isHidden(which)) // In this case, should be hidden
+    {
+        hide(which);
+    }
+    else
+    {
+        show(which);
+    }
+}
+
+/**
+ * When doing a quiz WaniKani only shows the info that was being asked for
+ * to see all info the user need to press a button to display it.
+ * This method returns true if the given reading/meaning is currently hidden.
+ *
+ * @param which "reading" or "meaning"
+ */
+function hiddenByWaniKani(which)
+{
+    if (!isQuiz())
+    {
+        return false;
+    }
+    var infoHidden = document.getElementById("all-info").style.display != "none";
+    var questionType = document.getElementById("question-type").className;
+    return which != questionType && infoHidden;
 }
 
 /**
@@ -687,7 +712,14 @@ function sanityCheckQuiz()
 {
     ensureElementExists("character");
     ensureElementExists("all-info");
+    var questionType = ensureElementExists("question-type");
+    questionType = questionType.className;
 
+    if (questionType != "reading" && questionType != "meaning")
+    {
+        throw new Error("'question-type' is neither \"reading\" nor \"meaning\", it is \"" + questionType + "\"");
+    }
+    
     if (isRadical())
     {
         ensureElementExists("item-info-col2");
