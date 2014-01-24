@@ -4,6 +4,11 @@
 // @description Adds a possiblity to hide meaning and reading mnemonics.
 // @version 1.6
 // @author Niklas Barsk
+// @include https://www.wanikani.com/review/session*
+// @include https://www.wanikani.com/lesson/session*
+// @include https://www.wanikani.com/radicals/*
+// @include https://www.wanikani.com/kanji/*
+// @include https://www.wanikani.com/vocabulary/*
 // @include http://www.wanikani.com/review/session*
 // @include http://www.wanikani.com/lesson/session*
 // @include http://www.wanikani.com/radicals/*
