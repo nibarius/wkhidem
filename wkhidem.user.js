@@ -29,8 +29,23 @@
 if (isReview() || isLesson())
 {
     // review/lessons quiz
-    waitForKeyElements("#note-meaning", init);
+    var mo = new MutationObserver(initQuiz);
+    mo.observe(document.getElementById("item-info-col2"), {'childList': true});
 }
+
+function initQuiz(allmutations)
+{
+    if (allmutations[0].addedNodes.length > 0)
+    {
+        // Ignore the mutation if no nodes are added.
+        // When going from one question to the next all elements in
+        // item-info-col2 is first removed as one mutation and then
+        // the new content is added as a second mutation. So mutations
+        // without any added nodes should be ignored
+        init();
+    }
+}
+
 
 if (isLesson())
 {
@@ -711,6 +726,7 @@ function sanityCheckQuiz()
 {
     ensureElementExists("character");
     ensureElementExists("all-info");
+    ensureElementExists("item-info-col2");
     var questionType = ensureElementExists("question-type");
     questionType = questionType.className;
 
@@ -719,11 +735,7 @@ function sanityCheckQuiz()
         throw new Error("'question-type' is neither \"reading\" nor \"meaning\", it is \"" + questionType + "\"");
     }
     
-    if (isRadical())
-    {
-        ensureElementExists("item-info-col2");
-    }
-    else
+    if (!isRadical())
     {
         ensureElementExists("item-info-reading-mnemonic");
         ensureElementExists("item-info-meaning-mnemonic");
