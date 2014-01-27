@@ -14,10 +14,6 @@
 // @include http://www.wanikani.com/radicals/*
 // @include http://www.wanikani.com/kanji/*
 // @include http://www.wanikani.com/vocabulary/*
-// @require http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require https://gist.github.com/raw/2625891/waitForKeyElements.js
-// @require https://raw.github.com/meetselva/attrchange/master/attrchange.js
-// @grant   GM_addStyle
 // @run-at document-end
 // @updateURL http://userscripts.org/scripts/source/184925.user.js
 // ==/UserScript==
@@ -33,26 +29,13 @@ if (isReview() || isLesson())
     mo.observe(document.getElementById("item-info-col2"), {'childList': true});
 }
 
-function initQuiz(allmutations)
-{
-    if (allmutations[0].addedNodes.length > 0)
-    {
-        // Ignore the mutation if no nodes are added.
-        // When going from one question to the next all elements in
-        // item-info-col2 is first removed as one mutation and then
-        // the new content is added as a second mutation. So mutations
-        // without any added nodes should be ignored
-        init();
-    }
-}
-
-
 if (isLesson())
 {
-    // The different types of lesson pages (non-quiz mode)
-    waitForKeyElements("#main-info.radical", initLesson);
-    waitForKeyElements("#main-info.kanji", initLesson);
-    waitForKeyElements("#main-info.vocabulary", initLesson);
+    // Call init whenever the main-info class attribute is updated.
+    // This happens whenever the user switch to a new item on the
+    // lesson/learning part.
+    var mo = new MutationObserver(init);
+    mo.observe(document.getElementById("main-info"), {'attributes': true});
 }
 
 if (isLookup())
@@ -65,24 +48,17 @@ if (isLookup())
     }
 }
 
-function initLesson()
+function initQuiz(allmutations)
 {
-    init();
-
-    // The lessons are loaded in batches of several items and when
-    // switching page new data is updated via javascript and not by
-    // loading a new web page. Set up a listener that listens to
-    // changes to the main-info element and calls init() again
-    // whenever it changes.
-    $("#main-info").attrchange({
-        trackValues: false,
-        callback: function(e)
-        {
-            if(!isQuiz())
-            {
-                init();
-            }
-        }});
+    if (allmutations[0].addedNodes.length > 0)
+    {
+        // Ignore the mutation if no nodes are added.
+        // When going from one question to the next all elements in
+        // item-info-col2 is first removed as one mutation and then
+        // the new content is added as a second mutation. So mutations
+        // without any added nodes should be ignored
+        init();
+    }
 }
 
 function init()
@@ -105,16 +81,15 @@ function init()
 
     // Setup listeners for changes to the note-meaning/reading.
     var mo = new MutationObserver(onNoteChanged);
-    var options = {'childList': true, 'subtree': true};
-    var noteMeaning = document.getElementById("note-meaning");
-    mo.observe(noteMeaning, options);
-    
+    var options = {'childList': true};
+    mo.observe(getNoteElement("meaning"), options);
+
     if (!isRadical())
     {
-        var noteReading = document.getElementById("note-reading");
-        mo.observe(noteReading, options);
+        mo.observe(getNoteElement("reading"), options);
     }
 }
+
 
 /**
  * Called whenever the note-reading or note-meaning elements children
@@ -122,12 +97,15 @@ function init()
  */
 function onNoteChanged(allmutations)
 {
-    if (allmutations.length == 2)
+    // 1 children for the edit note form and 0 children when the
+    // note is being displayed. Update visibility when form is closed
+    // and note is shown again.
+    if (allmutations[0].target.children.length == 0)
     {
-        // 2 nodes inserted (Note header and note div), this means the
-        // note section just went from edit to display mode,
-        // visibility must be updated.
-        var which = allmutations[0].target.parentNode.id.split('-')[1];
+        // example id for quiz: 'meaning-note'
+        // example id for learning: 'supplement-voc-meaning-notes'
+        var index = isLesson() && !isQuiz() ? 2 : 1;
+        var which = allmutations[0].target.parentNode.id.split('-')[index];
         setCorrectVisibilityFor(which);
     }
 }
@@ -323,7 +301,7 @@ function isQuiz()
  */
 function hasNote(which)
 {
-    return document.getElementById("note-" + which).children[1].textContent.trim() != "Click to add note";
+    return getNoteElement(which).textContent.trim() != "Click to add note";
 }
 
 /**
@@ -630,6 +608,34 @@ function getNoteHeader(which)
 }
 
 /**
+ * Returns the DOM element that holds the user note.
+* @param which Specifies if the notes element for the reading or meaning
+ *              should be returned.
+ */
+function getNoteElement(which)
+{
+    var element;
+    if (isLesson() && !isQuiz())
+    {
+        var id;
+        if (isRadical())
+        {
+            id = "supplement-rad-name-notes";
+        }
+        else
+        {
+            id = "supplement-" + getCharacterType().substring(0,3) + "-" + which + "-notes";
+        }
+        element = document.getElementById(id).children[0];
+    }
+    else
+    {
+        element = document.getElementById("note-" + which).children[1];
+    }
+    return element;
+}
+
+/**
  * Get the container element of the mnemonics and notes in the learning
  * part of lessons. There is no id available for the actual headers and
  * mnemonics like in the quiz so the container element is the closest
@@ -677,12 +683,6 @@ function sanityCheckPassed()
             sanityCheckLesson();
         }
 
-        ensureElementExists("note-meaning");
-        if (!isRadical())
-        {
-            ensureElementExists("note-reading");
-        }        
-        
         // Make sure we can get a correct character type.
         var ct = getCharacterType();
         if (ct != "radical" && ct != "vocabulary" && ct != "kanji")
@@ -716,6 +716,12 @@ function sanityCheckLookup()
     {
         throw new Error("No element with class 'japanese-font-styling-correction' exists");
     }
+
+    ensureElementExists("note-meaning");
+    if (!isRadical())
+    {
+        ensureElementExists("note-reading");
+    }
 }
 
 /**
@@ -727,6 +733,7 @@ function sanityCheckQuiz()
     ensureElementExists("character");
     ensureElementExists("all-info");
     ensureElementExists("item-info-col2");
+    ensureElementExists("note-meaning");
     var questionType = ensureElementExists("question-type");
     questionType = questionType.className;
 
@@ -734,7 +741,7 @@ function sanityCheckQuiz()
     {
         throw new Error("'question-type' is neither \"reading\" nor \"meaning\", it is \"" + questionType + "\"");
     }
-    
+
     if (!isRadical())
     {
         ensureElementExists("item-info-reading-mnemonic");
@@ -761,6 +768,12 @@ function sanityCheckLesson()
 
     if (!isQuiz())
     {
+        ensureElementExists("supplement-rad-name-notes");
+        ensureElementExists("supplement-kan-meaning-notes");
+        ensureElementExists("supplement-voc-meaning-notes");
+        ensureElementExists("supplement-kan-reading-notes");
+        ensureElementExists("supplement-voc-reading-notes");
+
         ensureElementExistsAndHasClass("supplement-voc-reading", "pure-u-3-4");
         ensureElementExistsAndHasClass("supplement-voc-meaning", "pure-u-3-4");
         ensureElementExistsAndHasClass("supplement-kan-reading", "pure-u-3-4");
