@@ -215,11 +215,16 @@ function getCharacter()
     }
 
     var character = element.textContent.trim();
-    if (character == "")
+    if (character == "") // Radical with image instead of text.
     {
-        // Radical with image instead of text.
-        var src = element.children[0].getAttribute("src");
-        character = src.split("/").pop()
+        var img = element.children[0];
+        // During quiz the image is inside a span, during lessons
+        // the image is directly under the character div.
+        if (isQuiz())
+        {
+            img = img.children[0]
+        }
+        character = img.getAttribute("src").split("/").pop()
     }
     return character
 }
