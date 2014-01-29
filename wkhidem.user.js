@@ -473,7 +473,17 @@ function textForHeader(which, action, header)
     header.innerHTML = header.firstChild.textContent + getLinkHTML(which, action);
 
     // Set either hide(which) or show(which) as onclick handler for the new link.
-    document.getElementById(getLinkId(which, action)).onclick = function() { eval(action)(which);}
+    document.getElementById(getLinkId(which, action)).onclick = function() 
+    {
+        if (action == "show")
+        {
+            show(which);
+        }
+        else
+        {
+            hide(which);
+        }
+    };
 }
 
 /**
