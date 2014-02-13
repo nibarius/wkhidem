@@ -9,11 +9,6 @@
 // @include https://www.wanikani.com/radicals/*
 // @include https://www.wanikani.com/kanji/*
 // @include https://www.wanikani.com/vocabulary/*
-// @include http://www.wanikani.com/review/session*
-// @include http://www.wanikani.com/lesson/session*
-// @include http://www.wanikani.com/radicals/*
-// @include http://www.wanikani.com/kanji/*
-// @include http://www.wanikani.com/vocabulary/*
 // @run-at document-end
 // @updateURL http://userscripts.org/scripts/source/184925.user.js
 // ==/UserScript==
